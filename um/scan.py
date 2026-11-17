@@ -21,7 +21,7 @@ import re
 import struct
 import subprocess
 import time
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from pathlib import Path
 
 from um.common import PS_UTF8, die, is_mac, is_windows, is_wsl, ps_exe, text_utf8, to_posix
