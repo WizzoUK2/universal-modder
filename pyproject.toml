@@ -9,6 +9,7 @@ dependencies = [
     "pillow>=10",
     "numpy>=1.24",
     "pyyaml>=6",
+    "defusedxml>=0.7",
 ]
 
 [project.scripts]
