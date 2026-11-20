@@ -2,11 +2,32 @@ name: test
 on: [push, pull_request]
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # Default interpreter is 3.13 (.python-version). The test matrix is 3.12 / 3.13 / 3.14;
+        # 3.14 is tested and must pass. requires-python is >=3.10, so one floor leg stays.
+        include:
+          - python-version: "3.10"
+            runs-on: ubuntu-22.04
+          - python-version: "3.12"
+            runs-on: ubuntu-latest
+          - python-version: "3.13"
+            runs-on: ubuntu-latest
+          - python-version: "3.14"
+            runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          # Sets UV_PYTHON for this leg, which `bin/um`'s `uv run` honours.
+          python-version: ${{ matrix.python-version }}
+          # Each interpreter caches different wheels; don't share one cache key across the matrix.
+          cache-suffix: py${{ matrix.python-version }}
+      - name: Install Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
       # ffmpeg is only for test_compile_small_edl. Without recommends apt skips mesa, VA/VDPAU drivers and
       # pocketsphinx-en-us (about half the download), and with man-db's auto-update off dpkg skips the man-page
       # reindex that can take minutes on the runner. When the Ubuntu mirror crawls (it has, at ~150 KB/s), the step
@@ -18,7 +39,7 @@ jobs:
           sudo rm -f /var/lib/man-db/auto-update
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends ffmpeg
-      - run: uv run --with pytest pytest -q tests
+      - run: uv run --python ${{ matrix.python-version }} --with pytest pytest -q tests
       - run: ./bin/um --help && for g in scan fal comfy sprixen sprite render3d video win backup publish kb; do ./bin/um $g --help > /dev/null; done
       - name: knowledge base
         run: ./bin/um kb check --index

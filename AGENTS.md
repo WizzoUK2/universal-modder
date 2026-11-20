@@ -60,11 +60,12 @@ repo, they almost always want to **mod a game**, or to learn how a game was modd
 - **Keep a journal:** a `MODLOG.md` in the mod's working folder. It becomes your field note at the end.
 
 ## Working on the toolkit itself
-- **Python:** 3.10+, deps Pillow, numpy and PyYAML (`uv` handles them via `bin/um`). Code lives in `um/`,
+- **Python:** 3.10+ (`requires-python`; 3.13 is the default in `.python-version`), deps Pillow, numpy and PyYAML (`uv` handles them via `bin/um`). Code lives in `um/`,
   one module per CLI group, each with `register(sub)` and a docstring that doubles as `--help`.
 - **Windows tools:** `um/ps1/*.ps1` embed C# 5 (Windows PowerShell 5.1's compiler): no string
   interpolation, no `out var`, no expression-bodied members.
 - **Tests:** `uv run --with pytest pytest -q tests`. CI also runs `um kb check --index` and
-  `um publish check .`.
+  `um publish check .` on Python 3.12, 3.13 and 3.14 (3.13 is the default), plus 3.10 on ubuntu-22.04
+  because that is the declared floor.
 - **Wording:** keep skills and docs agent-neutral ("the agent", not a product name) except in sections
   about one specific agent.
