@@ -156,7 +156,7 @@ static size_t sized_hdr(const unsigned char *p, size_t n, unsigned base, size_t 
 
 int agb_map_find(const unsigned char *p, size_t n, const char *key, const unsigned char **vp, size_t *vn)
 {
-    size_t cnt, off = sized_hdr(p, n, 0x60, &cnt), kl = strlen(key);
+    size_t cnt, off = sized_hdr(p, n, 0x60, &cnt), kl = strlen(key); // nosemgrep: cpp.lang.security.use-after-free.local-variable-malloc-free.local-variable-malloc-free -- p is a caller-owned input buffer, never freed here
     if (!off) return 0;
     for (size_t k = 0; k < cnt; k++) {
         size_t ks = agb_skip(p + off, n - off); if (!ks) return 0;

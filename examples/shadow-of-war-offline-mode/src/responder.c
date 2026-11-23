@@ -140,7 +140,8 @@ static int obj_read(const char *id, unsigned char **buf, size_t *len)
     FILE *f = _wfopen(path, L"rb"); if (!f) return 0;
     fseek(f, 0, SEEK_END); long n = ftell(f); fseek(f, 0, SEEK_SET);
     *buf = malloc(n > 0 ? n : 1); *len = fread(*buf, 1, n, f); fclose(f);
-    return *len > 0;
+    if (*len == 0) { free(*buf); *buf = NULL; return 0; }
+    return 1;
 }
 
 static int obj_write(const char *id, const unsigned char *buf, size_t len)
@@ -175,7 +176,7 @@ static void obj_encode(Agb *b, const char *id, const char *type, uint32_t create
 static void obj_field_str(const unsigned char *o, size_t n, const char *key, char *out, size_t cap)
 {
     const unsigned char *v; size_t vl; out[0] = 0;
-    if (agb_map_find(o, n, key, &v, &vl)) agb_as_str(v, vl, out, cap);
+    if (agb_map_find(o, n, key, &v, &vl)) agb_as_str(v, vl, out, cap); // nosemgrep: cpp.lang.security.use-after-free.local-variable-malloc-free.local-variable-malloc-free -- o is a caller-owned buffer, still live here
 }
 
 /* all stored objects of one type, as search results [{score, result}] */
@@ -191,9 +192,9 @@ static int obj_search(Agb *b, const char *type)
             char *dot = strrchr(id, '.'); if (dot) *dot = 0;
             unsigned char *o; size_t ol; char t[64];
             if (n < 256 && obj_read(id, &o, &ol)) {
-                obj_field_str(o, ol, "type", t, sizeof t);
+                obj_field_str(o, ol, "type", t, sizeof t); // nosemgrep: cpp.lang.security.use-after-free.local-variable-malloc-free.local-variable-malloc-free -- o was freshly allocated by obj_read this iteration
                 if (!strcmp(t, type)) { strncpy(ids[n], id, 40); ids[n][40] = 0; n++; }
-                free(o);
+                free(o); o = NULL; // nosemgrep: cpp.lang.security.memory.deallocation.double-free.double-free -- one free per obj_read allocation; reset after free
             }
         } while (FindNextFileW(h, &fd));
         FindClose(h);
